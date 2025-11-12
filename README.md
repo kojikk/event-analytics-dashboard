@@ -16,12 +16,23 @@
 ### Локальная разработка
 
 ```bash
-# Запуск минимальной версии (Frontend + API Gateway)
+# Запуск всех сервисов (Frontend + API Gateway + Auth + PostgreSQL)
 docker compose -f infra/docker/docker-compose.dev.yml up --build
 
-# Фронтенд доступен на http://localhost:3000
-# API Gateway на http://localhost:8000
+# Доступные сервисы:
+# 🎨 Frontend: http://localhost:3000
+# 🔌 API Gateway: http://localhost:8000  
+# 🔐 Auth Service: http://localhost:8001
+# 🐘 PostgreSQL: localhost:5433
 ```
+
+### 🚀 Быстрый тест
+
+1. Откройте http://localhost:3000
+2. Потыкайте элементы на Dashboard (события отправляются в API)
+3. Нажмите **Admin Panel** → войдите как `admin` / `admin`
+4. Увидите username и email в правом верхнем углу
+5. Попробуйте неверные данные - должна быть ошибка 401
 
 ### Полная версия со всеми сервисами
 
@@ -46,19 +57,29 @@ docker compose -f infra/docker/docker-compose.full.yml up --build
 └── .github/workflows/       # CI/CD пайплайны
 ```
 
-## Фазы разработки
+## 🎯 Статус разработки
 
-Проект реализуется поэтапно согласно [PLAN.md](./PLAN.md):
-1. ✅ Инициализация проекта
-2. 🔄 Frontend + API Gateway (базовый функционал)
-3. ⏳ Auth Service + PostgreSQL
-4. ⏳ Collector + Kafka/Redpanda
-5. ⏳ Writer + ClickHouse
-6. ⏳ Analytics Service
-7. ⏳ Полноценный Dashboard с графиками
-8. ⏳ Observability (логи, метрики)
-9. ⏳ Kubernetes деплой
-10. ⏳ CI/CD автоматизация
+### ✅ Завершено (Фазы 1-2)
+- 🎨 **Красивый тёмный Frontend** с glassmorphism дизайном
+- 🔐 **Полная система авторизации** с JWT + PostgreSQL
+- 👤 **Отображение пользователя** в navbar (username + email)
+- 🚀 **API Gateway** с CORS, rate limiting, проксированием
+- 📊 **Интерактивный Dashboard** с кликабельными элементами
+- 📈 **Admin Panel** с графиками (пока заглушки)
+- 🐳 **Docker контейнеризация** для разработки
+- 🛡️ **Безопасность** - правильная валидация токенов
+
+### 🔄 В разработке (Фаза 3)
+- ⏳ Collector Service + Kafka/Redpanda
+- ⏳ Writer Service + ClickHouse
+- ⏳ Analytics Service
+
+### 📋 Планируется
+- ⏳ Kubernetes деплой
+- ⏳ CI/CD автоматизация  
+- ⏳ Observability (метрики, логи)
+
+Подробный план в [PLAN.md](./PLAN.md)
 
 ## Переменные окружения
 
@@ -72,11 +93,11 @@ JWT_SECRET_KEY=your-secret-key-here
 # Frontend
 VITE_API_URL=http://localhost:8000
 
-# Auth Service (когда будет добавлен)
-POSTGRES_HOST=localhost
+# Auth Service
+POSTGRES_HOST=postgres
 POSTGRES_DB=analytics_auth
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+POSTGRES_PASSWORD=postgres_password
 
 # ClickHouse (когда будет добавлен)  
 CLICKHOUSE_HOST=localhost
