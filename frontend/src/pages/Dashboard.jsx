@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { trackEvent } from '../utils/analytics'
+import { analytics } from '../utils/analytics'
 
 function Dashboard() {
   const [interactions, setInteractions] = useState(0)
@@ -20,7 +20,7 @@ function Dashboard() {
     setInteractions(prev => prev + 1)
     setLastAction(`${actionType}: ${JSON.stringify(actionData)}`)
     
-    trackEvent(actionType, {
+    analytics.trackEvent(actionType, {
       ...actionData,
       timestamp: new Date().toISOString(),
       session_interactions: interactions + 1

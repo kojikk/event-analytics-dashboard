@@ -195,17 +195,13 @@ async def get_current_user(user = Depends(require_auth)):
 async def collect_event(request: Request, event: EventPayload):
     logger.info(f"Received event: {event.event_type} from user {event.user_id}")
     
-    # Заглушка - в реальности переправим в Collector Service
-    # try:
-    #     async with httpx.AsyncClient() as client:
-    #         response = await client.post(f"{config.COLLECTOR_SERVICE_URL}/events", json=event.dict())
-    #         return response.json()
-    # except Exception as e:
-    #     logger.error(f"Error forwarding event: {e}")
-    #     raise HTTPException(status_code=503, detail="Service temporarily unavailable")
-    
-    # Пока просто логируем и возвращаем 202
-    return {"message": "Event accepted", "event_id": f"evt_{datetime.utcnow().timestamp()}"}
+    # Проксируем запрос в Collector Service
+    return await proxy_request(
+        config.COLLECTOR_SERVICE_URL,
+        "/events",
+        "POST",
+        json=event.dict()
+    )
 
 # Analytics endpoints (заглушки)
 @app.get("/analytics/events/count")

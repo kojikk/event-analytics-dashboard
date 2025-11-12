@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../utils/auth.jsx'
+import { analytics } from '../utils/analytics'
 
 function Login() {
   const [credentials, setCredentials] = useState({
@@ -37,21 +38,29 @@ function Login() {
       
       if (response.ok && !data.detail) {
         if (isRegisterMode) {
+          analytics.trackRegistration(true, credentials.username)
           setSuccess('Registration successful! You can now login.')
           setIsRegisterMode(false)
           setCredentials({ username: credentials.username, password: '', email: '' })
         } else {
           // Проверяем наличие access_token перед логином
           if (data.access_token) {
+            analytics.trackLogin(true, credentials.username)
             console.log('Login successful, token received')
             login(data.access_token)
           } else {
             console.error('No access token in response:', data)
+            analytics.trackLogin(false, credentials.username)
             setError('Login failed - no token received')
           }
         }
       } else {
         console.log('Login failed:', data)
+        if (isRegisterMode) {
+          analytics.trackRegistration(false, credentials.username)
+        } else {
+          analytics.trackLogin(false, credentials.username)
+        }
         setError(data.detail || `${isRegisterMode ? 'Registration' : 'Login'} failed`)
       }
     } catch (err) {

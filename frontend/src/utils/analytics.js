@@ -146,3 +146,62 @@ export const getEventCounts = (token) => fetchAnalytics('events/count', token)
 export const getEventsByType = (token) => fetchAnalytics('events/by-type', token)
 export const getEventsByUser = (token) => fetchAnalytics('events/by-user', token)
 export const getTimeseries = (token) => fetchAnalytics('events/timeseries', token)
+
+// Класс для удобного API
+class AnalyticsTracker {
+  constructor() {
+    this.sessionId = getSessionId()
+    this.userId = getUserId()
+  }
+
+  async trackEvent(eventType, additionalData = {}) {
+    return trackEvent(eventType, additionalData)
+  }
+
+  trackPageView(page) {
+    return trackPageView(page || window.location.pathname)
+  }
+
+  trackButtonClick(buttonName, section) {
+    return trackEvent('button_click', {
+      button_name: buttonName,
+      section: section || 'unknown'
+    })
+  }
+
+  trackFeatureUsage(featureName, details = {}) {
+    return trackEvent('feature_usage', {
+      feature_name: featureName,
+      ...details
+    })
+  }
+
+  trackMessageSent(messageLength) {
+    return trackEvent('message_sent', {
+      message_length: messageLength,
+      section: 'message_center'
+    })
+  }
+
+  trackLogin(success, username) {
+    return trackEvent('login_attempt', {
+      success,
+      username: success ? username : undefined
+    })
+  }
+
+  trackRegistration(success, username) {
+    return trackEvent('registration_attempt', {
+      success,
+      username: success ? username : undefined
+    })
+  }
+}
+
+// Экспортируем глобальный экземпляр
+export const analytics = new AnalyticsTracker()
+
+// Автоматически отслеживаем загрузку страницы
+if (typeof window !== 'undefined') {
+  analytics.trackPageView()
+}
