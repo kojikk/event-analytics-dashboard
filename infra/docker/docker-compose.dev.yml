@@ -1,0 +1,37 @@
+networks:
+  analytics_net:
+    driver: bridge
+
+services:
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ../../frontend:/app
+      - /app/node_modules
+    networks:
+      - analytics_net
+    depends_on:
+      - api-gateway
+
+  api-gateway:
+    build:
+      context: ../../services/api-gateway
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - JWT_SECRET_KEY=dev-secret-key-change-in-production
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=http://localhost:3000
+    volumes:
+      - ../../services/api-gateway:/app
+    networks:
+      - analytics_net
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload

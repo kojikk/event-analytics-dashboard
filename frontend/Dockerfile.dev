@@ -1,0 +1,21 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Копируем package.json и package-lock.json
+COPY package*.json ./
+
+# Устанавливаем зависимости
+RUN npm ci
+
+# Копируем остальные файлы
+COPY . .
+
+# Устанавливаем переменную окружения для development
+ENV NODE_ENV=development
+
+# Expose порт для Vite
+EXPOSE 3000
+
+# Запускаем Vite dev server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
