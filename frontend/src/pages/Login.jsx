@@ -33,18 +33,26 @@ function Login() {
         body: JSON.stringify(payload)
       })
 
-      if (response.ok) {
-        const data = await response.json()
+      const data = await response.json()
+      
+      if (response.ok && !data.detail) {
         if (isRegisterMode) {
           setSuccess('Registration successful! You can now login.')
           setIsRegisterMode(false)
           setCredentials({ username: credentials.username, password: '', email: '' })
         } else {
-          login(data.access_token)
+          // Проверяем наличие access_token перед логином
+          if (data.access_token) {
+            console.log('Login successful, token received')
+            login(data.access_token)
+          } else {
+            console.error('No access token in response:', data)
+            setError('Login failed - no token received')
+          }
         }
       } else {
-        const errorData = await response.json()
-        setError(errorData.detail || `${isRegisterMode ? 'Registration' : 'Login'} failed`)
+        console.log('Login failed:', data)
+        setError(data.detail || `${isRegisterMode ? 'Registration' : 'Login'} failed`)
       }
     } catch (err) {
       setError('Network error. Please check API Gateway is running.')

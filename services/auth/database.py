@@ -1,6 +1,7 @@
 import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -51,7 +52,7 @@ async def create_tables():
 async def check_db_health():
     try:
         async with async_session() as session:
-            await session.execute("SELECT 1")
+            await session.execute(text("SELECT 1"))
             return True
     except Exception as e:
         print(f"Database health check failed: {e}")

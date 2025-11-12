@@ -245,7 +245,20 @@ async def proxy_request(service_url: str, path: str, method: str, **kwargs):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.request(method, f"{service_url}{path}", **kwargs)
+            
+            # Проксируем HTTP статус от оригинального сервиса
+            if response.status_code >= 400:
+                try:
+                    error_data = response.json()
+                    raise HTTPException(status_code=response.status_code, detail=error_data.get('detail', 'Request failed'))
+                except ValueError:
+                    # Если не JSON
+                    raise HTTPException(status_code=response.status_code, detail=response.text)
+            
             return response.json()
+    except HTTPException:
+        # Повторно выбрасываем HTTPException
+        raise
     except Exception as e:
         logger.error(f"Error proxying to {service_url}{path}: {e}")
         raise HTTPException(status_code=503, detail="Service temporarily unavailable")

@@ -330,3 +330,35 @@ body {
   33% { transform: translate(30px, -30px) rotate(120deg); }
   66% { transform: translate(-20px, 20px) rotate(240deg); }
 }
+
+/* User info in navbar */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.8);
+  min-width: 0;
+}
+
+.user-info div {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+@media (max-width: 768px) {
+  .nav {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .user-info {
+    font-size: 0.8rem;
+  }
+  
+  .user-info div {
+    max-width: 150px;
+  }
+}

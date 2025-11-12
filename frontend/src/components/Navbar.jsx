@@ -3,7 +3,7 @@ import { useAuth } from '../utils/auth.jsx'
 
 function Navbar() {
   const location = useLocation()
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, logout, user } = useAuth()
 
   return (
     <header className="header">
@@ -26,7 +26,14 @@ function Navbar() {
           </Link>
         )}
         
-        <div style={{ marginLeft: 'auto' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {isAuthenticated && user && (
+            <div className="user-info">
+              <div title={user.username}>👤 {user.username}</div>
+              <div title={user.email}>📧 {user.email}</div>
+            </div>
+          )}
+          
           {isAuthenticated ? (
             <button onClick={logout} className="btn btn-secondary">
               Logout
