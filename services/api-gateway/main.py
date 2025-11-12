@@ -141,35 +141,53 @@ async def log_requests(request: Request, call_next):
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
-# Auth endpoints (заглушки)
-@app.post("/auth/login", response_model=LoginResponse)
+# Auth endpoints (proxy to Auth Service)
+@app.post("/auth/login")
 @limiter.limit("5/minute")
 async def login(request: Request, login_data: LoginRequest):
     logger.info(f"Login attempt for user: {login_data.username}")
-    
-    # Заглушка аутентификации
-    if login_data.username == "admin" and login_data.password == "admin":
-        access_token = create_access_token(data={"sub": login_data.username})
-        return LoginResponse(
-            access_token=access_token,
-            expires_in=config.JWT_EXPIRATION_HOURS * 3600
-        )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
-        )
+    return await proxy_request(
+        config.AUTH_SERVICE_URL,
+        "/login",
+        "POST",
+        json=login_data.dict()
+    )
 
 @app.post("/auth/register")
 @limiter.limit("3/minute")
 async def register(request: Request, user_data: dict):
-    # Заглушка регистрации
     logger.info("Registration attempt")
-    return {"message": "Registration endpoint - not implemented yet"}
+    return await proxy_request(
+        config.AUTH_SERVICE_URL,
+        "/register",
+        "POST",
+        json=user_data
+    )
 
 @app.get("/auth/verify")
 async def verify_user(user = Depends(require_auth)):
-    return {"valid": True, "user": user["username"]}
+    # Forward to auth service for verification
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{config.AUTH_SERVICE_URL}/verify",
+            headers={"Authorization": f"Bearer {user['token']}"}
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail="Token verification failed"
+            )
+
+@app.get("/auth/me")
+async def get_current_user(user = Depends(require_auth)):
+    return await proxy_request(
+        config.AUTH_SERVICE_URL,
+        "/me",
+        "GET",
+        headers={"Authorization": f"Bearer {user['token']}"}
+    )
 
 # Events endpoints
 @app.post("/events", status_code=202)

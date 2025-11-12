@@ -3,6 +3,74 @@ networks:
     driver: bridge
 
 services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=analytics_auth
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - analytics_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Auth Service
+  auth:
+    build:
+      context: ../../services/auth
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8001:8001"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=analytics_auth
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_password
+      - JWT_SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_EXPIRATION_HOURS=24
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+    volumes:
+      - ../../services/auth:/app
+    networks:
+      - analytics_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../../services/api-gateway
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - JWT_SECRET_KEY=dev-secret-key-change-in-production
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=http://localhost:3000
+      - AUTH_SERVICE_URL=http://auth:8001
+    volumes:
+      - ../../services/api-gateway:/app
+    networks:
+      - analytics_net
+    depends_on:
+      - auth
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend
   frontend:
     build:
       context: ../../frontend
@@ -19,19 +87,5 @@ services:
     depends_on:
       - api-gateway
 
-  api-gateway:
-    build:
-      context: ../../services/api-gateway
-      dockerfile: Dockerfile.dev
-    ports:
-      - "8000:8000"
-    environment:
-      - PORT=8000
-      - JWT_SECRET_KEY=dev-secret-key-change-in-production
-      - LOG_LEVEL=INFO
-      - CORS_ORIGINS=http://localhost:3000
-    volumes:
-      - ../../services/api-gateway:/app
-    networks:
-      - analytics_net
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+volumes:
+  postgres_data:
